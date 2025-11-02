@@ -1,5 +1,4 @@
 :root {
-  /* Beeline Theme */
   --bg-color: #fff;
   --primary-color: #FFD500;
   --secondary-color: #000;
@@ -7,7 +6,6 @@
   --text-color: #000;
 }
 
-/* Общие стили */
 body, html {
   margin:0;
   font-family: Arial,sans-serif;
@@ -15,200 +13,24 @@ body, html {
   color: var(--text-color);
 }
 
-/* Авторизация */
-.login-container {
-  width:320px;
-  margin:120px auto;
-  padding:24px;
-  background: var(--bg-color);
-  border:2px solid var(--primary-color);
-  border-radius:8px;
-  text-align:center;
-  box-shadow:0 4px 12px rgba(0,0,0,0.1);
-}
+h1 { text-align:center; margin-bottom:20px; }
+form { background:white; padding:20px; border-radius:12px; margin:10px auto; width:300px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+input { width:100%; padding:8px; margin-bottom:10px; border-radius:6px; border:1px solid #ccc; }
+button { width:100%; padding:8px; border:none; background: var(--primary-color); color:var(--secondary-color); border-radius:6px; cursor:pointer; font-weight:600; }
+button:hover { background: var(--accent-color); }
+.message { color:green; margin-top:10px; }
+.error { color:red; margin-top:10px; }
 
-.login-container input {
-  width:100%;
-  margin:8px 0;
-  padding:10px;
-  border-radius:20px;
-  border:1px solid var(--primary-color);
-  outline:none;
-}
-
-.login-container input:focus {
-  border-color: var(--accent-color);
-  box-shadow:0 0 5px var(--primary-color);
-}
-
-.login-container button {
-  width:100%;
-  padding:10px 0;
-  border:none;
-  border-radius:20px;
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-  font-weight:600;
-  cursor:pointer;
-  transition: all 0.2s;
-  margin-top:10px;
-}
-
-.login-container button:hover {
-  background-color: var(--accent-color);
-  box-shadow:0 4px 8px rgba(0,0,0,0.2);
-}
-
-#loginError {
-  margin-top:10px;
-  color:red;
-  font-size:14px;
-}
-
-/* Кабинет */
-.cabinet {
-  display:flex;
-  flex-direction:row;
-  height:100vh;
-}
-
-.topbar {
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  height:50px;
-  background: var(--bg-color);
-  border-bottom:2px solid var(--primary-color);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 16px;
-  z-index:100;
-  color: var(--text-color);
-}
-
-.topbar .logo { font-weight:bold; color: var(--text-color); }
-.topbar select {
-  border-radius:20px;
-  padding:5px 10px;
-  border:1px solid var(--primary-color);
-}
-
-/* Боковая панель VK-style */
-.sidebar {
-  width:72px;
-  background: var(--bg-color);
-  border-right:1px solid var(--primary-color);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  padding-top:16px;
-  gap:8px;
-}
-
-.sidebar-item {
-  width:48px;
-  height:48px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:12px;
-  cursor:pointer;
-  color: var(--secondary-color);
-  transition: all 0.2s;
-  position: relative;
-}
-
-.sidebar-item:hover {
-  background-color: var(--accent-color);
-}
-
-.sidebar-item.active::after {
-  content:'';
-  position:absolute;
-  left:0;
-  width:4px;
-  height:100%;
-  background-color: var(--primary-color);
-  border-radius:2px;
-}
-
-.sidebar-item span {
-  display:none;
-  position:absolute;
-  left:60px;
-  white-space:nowrap;
-  background-color: var(--bg-color);
-  padding:4px 8px;
-  border-radius:4px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  color: var(--text-color);
-  font-weight:600;
-}
-
+/* Dashboard */
+.cabinet, #dashboard { display:flex; flex-direction:row; height:80vh; margin-top:20px; }
+.topbar { height:50px; width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 20px; background: var(--bg-color); border-bottom:2px solid var(--primary-color); }
+.sidebar { width:72px; background: var(--bg-color); display:flex; flex-direction:column; align-items:center; padding-top:16px; gap:8px; border-right:1px solid var(--primary-color); }
+.sidebar-item { width:48px; height:48px; display:flex; align-items:center; justify-content:center; border-radius:12px; cursor:pointer; position:relative; }
+.sidebar-item.active::after { content:''; position:absolute; left:0; width:4px; height:100%; background-color: var(--primary-color); border-radius:2px; }
+.sidebar-item span { display:none; position:absolute; left:60px; white-space:nowrap; background: var(--bg-color); padding:4px 8px; border-radius:4px; color: var(--text-color); font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
 .sidebar-item:hover span { display:block; }
-
-/* Основная область */
-.main {
-  flex:1;
-  background: var(--bg-color);
-  margin-top:50px;
-  padding:16px;
-  overflow:auto;
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-}
-
-/* Таблицы */
-table {
-  border-collapse: collapse;
-  width:100%;
-  background: var(--secondary-color);
-  color: var(--text-color);
-}
-table th, table td {
-  border:1px solid var(--text-color);
-  padding:6px;
-  text-align:center;
-}
-
-/* Кнопки action */
-button.action {
-  padding:8px 16px;
-  border:none;
-  border-radius:20px;
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-  cursor:pointer;
-  font-weight:600;
-  transition: all 0.2s;
-}
-button.action:hover {
-  background-color: var(--accent-color);
-  box-shadow:0 4px 8px rgba(0,0,0,0.2);
-}
-
-/* Модальные окна */
-.modal {
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background: rgba(0,0,0,0.4);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.modal-content {
-  background: var(--bg-color);
-  padding:20px;
-  border-radius:10px;
-  width:300px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+.main { flex:1; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:16px; background: var(--bg-color); }
+table { border-collapse:collapse; width:100%; background: var(--secondary-color); color: var(--text-color); }
+table th, table td { border:1px solid var(--text-color); padding:6px; text-align:center; }
+button.action { padding:8px 16px; border:none; border-radius:20px; background-color: var(--primary-color); color: var(--secondary-color); cursor:pointer; font-weight:600; }
+button.action:hover { background-color: var(--accent-color); box-shadow:0 4px 8px rgba(0,0,0,0.2); }
