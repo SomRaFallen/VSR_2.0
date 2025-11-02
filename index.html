@@ -1,56 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard VK/Beeline</title>
+<meta charset="UTF-8">
+<title>Авторизация пользователей</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<h1>🧑‍💻 Авторизация пользователей</h1>
 
-<!-- Авторизация -->
-<div class="login-container" id="loginContainer">
-  <h1>Вход</h1>
-  <input type="text" id="username" placeholder="Логин">
-  <input type="password" id="password" placeholder="Пароль">
-  <button id="loginBtn">Войти</button>
-  <div id="loginError"></div>
-</div>
+<form id="registerForm">
+  <h3>Регистрация</h3>
+  <input type="text" id="username" placeholder="Имя пользователя" required>
+  <input type="password" id="password" placeholder="Пароль" required>
+  <button type="submit">Зарегистрироваться</button>
+  <div id="regMsg"></div>
+</form>
 
-<!-- Кабинет -->
-<div class="cabinet" id="cabinet" style="display:none;">
-  <header class="topbar">
-    <div class="logo">Dashboard</div>
-    <div>
-      <span id="userRole"></span>
-      <select id="themeSelect">
-        <option value="beeline">Beeline</option>
-        <option value="vk">VK</option>
-      </select>
-    </div>
-  </header>
+<form id="loginForm">
+  <h3>Вход</h3>
+  <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+  <input type="password" id="loginPassword" placeholder="Пароль" required>
+  <button type="submit">Войти</button>
+  <div id="loginMsg"></div>
+</form>
 
-  <aside class="sidebar" id="tabMenu">
-    <!-- Вкладки добавляются через JS -->
-  </aside>
-
-  <main class="main" id="cabinetMain">
-    <!-- Контент вкладок -->
-  </main>
-</div>
-
-<!-- Модальные окна -->
-<div id="editModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h3>Редактировать ученика/наставника</h3>
-    <input type="text" id="editName" placeholder="Имя">
-    <input type="text" id="editCity" placeholder="Город">
-    <input type="text" id="editSupervisor" placeholder="Руководитель">
-    <button id="saveEditBtn" class="action">Сохранить</button>
-    <button onclick="closeModal()" class="action">Отмена</button>
-  </div>
-</div>
+<form id="changeForm">
+  <h3>Смена пароля</h3>
+  <input type="text" id="chUsername" placeholder="Имя пользователя" required>
+  <input type="password" id="oldPassword" placeholder="Старый пароль" required>
+  <input type="password" id="newPassword" placeholder="Новый пароль" required>
+  <button type="submit">Изменить пароль</button>
+  <div id="chMsg"></div>
+</form>
 
 <script src="script.js"></script>
 </body>
