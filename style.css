@@ -7,6 +7,7 @@
   --text-color: #000;
 }
 
+/* Общие стили */
 body, html {
   margin:0;
   font-family: Arial,sans-serif;
@@ -70,6 +71,7 @@ body, html {
   flex-direction:row;
   height:100vh;
 }
+
 .topbar {
   position:fixed;
   top:0;
@@ -85,6 +87,7 @@ body, html {
   z-index:100;
   color: var(--text-color);
 }
+
 .topbar .logo { font-weight:bold; color: var(--text-color); }
 .topbar select {
   border-radius:20px;
@@ -103,6 +106,7 @@ body, html {
   padding-top:16px;
   gap:8px;
 }
+
 .sidebar-item {
   width:48px;
   height:48px;
@@ -115,9 +119,11 @@ body, html {
   transition: all 0.2s;
   position: relative;
 }
+
 .sidebar-item:hover {
   background-color: var(--accent-color);
 }
+
 .sidebar-item.active::after {
   content:'';
   position:absolute;
@@ -127,6 +133,7 @@ body, html {
   background-color: var(--primary-color);
   border-radius:2px;
 }
+
 .sidebar-item span {
   display:none;
   position:absolute;
@@ -139,6 +146,7 @@ body, html {
   color: var(--text-color);
   font-weight:600;
 }
+
 .sidebar-item:hover span { display:block; }
 
 /* Основная область */
@@ -194,6 +202,7 @@ button.action:hover {
   align-items:center;
   justify-content:center;
 }
+
 .modal-content {
   background: var(--bg-color);
   padding:20px;
