@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard VK/Beeline</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Авторизация -->
+<div class="login-container" id="loginContainer">
+  <h1>Вход</h1>
+  <input type="text" id="username" placeholder="Логин">
+  <input type="password" id="password" placeholder="Пароль">
+  <button id="loginBtn">Войти</button>
+  <div id="loginError"></div>
+</div>
+
+<!-- Кабинет -->
+<div class="cabinet" id="cabinet" style="display:none;">
+  <header class="topbar">
+    <div class="logo">Dashboard</div>
+    <div>
+      <span id="userRole"></span>
+      <select id="themeSelect">
+        <option value="beeline">Beeline</option>
+        <option value="vk">VK</option>
+      </select>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="tabMenu">
+    <!-- Вкладки добавляются через JS -->
+  </aside>
+
+  <main class="main" id="cabinetMain">
+    <!-- Контент вкладок -->
+  </main>
+</div>
+
+<!-- Модальные окна -->
+<div id="editModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>Редактировать ученика/наставника</h3>
+    <input type="text" id="editName" placeholder="Имя">
+    <input type="text" id="editCity" placeholder="Город">
+    <input type="text" id="editSupervisor" placeholder="Руководитель">
+    <button id="saveEditBtn" class="action">Сохранить</button>
+    <button onclick="closeModal()" class="action">Отмена</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
