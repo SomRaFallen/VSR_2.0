@@ -1,89 +1,227 @@
-// --- Остальные функции для рендеринга вкладок ---
-// renderStudentSummary, renderStudentsTable, renderMentorsTable, renderMentorSummary, renderStudentIndicators
-// В них реализованы: таблицы с редактированием, ввод AHT/NSAT, кнопки сохранить с fetch на сервер, графики Chart.js
-// Все кнопки, поля и таблицы используют CSS переменные, темы переключаются через setTheme
-// --- Рендер сводной по ученику ---
-function renderStudentSummary(container){
-  let select = document.createElement('select');
-  let visibleStudents = getVisibleStudents();
-  visibleStudents.forEach(s=>{
-    let option = document.createElement('option'); option.value=s.id; option.innerText=s.name;
-    select.appendChild(option);
+const API_URL = 'https://autorization-hdzm.onrender.com/api';
+let currentUser = null;
+let users = [];
+let students = [];
+let chart = null;
+
+// ---------------------------- Логин через сервер ----------------------------
+document.getElementById('loginBtn').onclick = async function() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  try {
+    const response = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await response.json();
+    if (data.success) {
+      localStorage.setItem('token', data.token);
+      currentUser = data.user;
+      users = data.users;
+      students = data.students;
+      showCabinet();
+    } else {
+      document.getElementById('loginError').innerText = 'Неверный логин или пароль';
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loginError').innerText = 'Ошибка соединения с сервером';
+  }
+};
+
+// ---------------------------- Отображение кабинета ----------------------------
+function showCabinet() {
+  document.getElementById('loginContainer').style.display = 'none';
+  document.getElementById('cabinet').style.display = 'flex';
+  document.getElementById('userRole').innerText = `${currentUser.username} (${currentUser.role})`;
+  initTabs();
+}
+
+// ---------------------------- Инициализация боковой панели ----------------------------
+function initTabs() {
+  const sidebar = document.getElementById('tabMenu');
+  sidebar.innerHTML = '';
+  const tabs = [
+    { name: 'Сводная по группе', tab: 'groupSummary' },
+    { name: 'Сводная по ученику', tab: 'studentSummary' },
+    { name: 'Ученики', tab: 'students' },
+    { name: 'Наставники', tab: 'mentors' },
+    { name: 'Сводные наставников', tab: 'mentorSummary' },
+    { name: 'Показатели ученика', tab: 'studentIndicators' }
+  ];
+  tabs.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.classList.add('sidebar-item');
+    if (i === 0) div.classList.add('active');
+    div.dataset.tab = t.tab;
+    div.innerHTML = `<img src="icons/${t.tab}.svg" alt="${t.name}"/><span>${t.name}</span>`;
+    div.onclick = function() {
+      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+      div.classList.add('active');
+      selectTab(t.tab);
+    };
+    sidebar.appendChild(div);
+  });
+  selectTab('groupSummary');
+}
+
+// ---------------------------- Переключение вкладок ----------------------------
+function selectTab(tabName) {
+  const main = document.getElementById('cabinetMain');
+  main.innerHTML = '';
+  if (tabName === 'groupSummary') renderGroupSummary(main);
+  if (tabName === 'studentSummary') renderStudentSummary(main);
+  if (tabName === 'students') renderStudentsTable(main);
+  if (tabName === 'mentors') renderMentorsTable(main);
+  if (tabName === 'mentorSummary') renderMentorSummary(main);
+  if (tabName === 'studentIndicators') renderStudentIndicators(main);
+}
+
+// ---------------------------- Переключение темы ----------------------------
+document.getElementById('themeSelect').onchange = function(e) {
+  setTheme(e.target.value);
+};
+function setTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'beeline') {
+    root.style.setProperty('--bg-color', '#fff');
+    root.style.setProperty('--primary-color', '#FFD500');
+    root.style.setProperty('--secondary-color', '#000');
+    root.style.setProperty('--accent-color', '#e6c500');
+    root.style.setProperty('--text-color', '#000');
+  } else if (theme === 'vk') {
+    root.style.setProperty('--bg-color', '#f5f6fa');
+    root.style.setProperty('--primary-color', '#5181b8');
+    root.style.setProperty('--secondary-color', '#fff');
+    root.style.setProperty('--accent-color', '#3b5998');
+    root.style.setProperty('--text-color', '#000');
+  }
+}
+
+// ---------------------------- Модальные окна редактирования ----------------------------
+function openEditModal(entity) {
+  document.getElementById('editModal').style.display = 'flex';
+  document.getElementById('editName').value = entity.name || '';
+  document.getElementById('editCity').value = entity.city || '';
+  document.getElementById('editSupervisor').value = entity.supervisor || '';
+  document.getElementById('saveEditBtn').onclick = function() {
+    entity.name = document.getElementById('editName').value;
+    entity.city = document.getElementById('editCity').value;
+    entity.supervisor = document.getElementById('editSupervisor').value;
+    selectTab('students');
+    closeModal();
+  };
+}
+function closeModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// ---------------------------- Вспомогательные функции ----------------------------
+function getVisibleStudents() {
+  if (currentUser.role === 'admin') return students;
+  if (currentUser.role === 'kurator') return students.filter(s => currentUser.mentors.includes(s.mentorId));
+  if (currentUser.role === 'mentor') return students.filter(s => currentUser.students.includes(s.id));
+  return [];
+}
+function avg(arr) {
+  if (!arr.length) return 0;
+  return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+}
+
+// ---------------------------- Рендер групповой сводной ----------------------------
+function renderGroupSummary(container) {
+  const table = document.createElement('table');
+  const header = table.insertRow();
+  ['Куратор','Наставник','Ученик','Город','Руководитель','AHT','NSAT'].forEach(h=>{
+    const th = header.insertCell(); th.innerText = h;
+  });
+  getVisibleStudents().forEach(s=>{
+    const mentor = users.find(u=>u.id === s.mentorId);
+    const kurator = users.find(u=>u.id === mentor?.kuratorId);
+    const row = table.insertRow();
+    [kurator?.username || '', mentor?.username || '', s.name, s.city, s.supervisor,
+      avg(s.AHT?.map(a=>a.seconds)||[]), avg(s.NSAT?.map(n=>n.total)||[])].forEach(v=>{
+        const td = row.insertCell(); td.innerText = v;
+    });
+  });
+  container.appendChild(table);
+}
+
+// ---------------------------- Рендер сводной по ученику ----------------------------
+function renderStudentSummary(container) {
+  const select = document.createElement('select');
+  getVisibleStudents().forEach(s=>{
+    const opt = document.createElement('option'); opt.value = s.id; opt.innerText = s.name;
+    select.appendChild(opt);
   });
   container.appendChild(select);
 
-  let chartCanvas = document.createElement('canvas'); container.appendChild(chartCanvas);
+  const chartCanvas = document.createElement('canvas');
+  container.appendChild(chartCanvas);
 
-  select.onchange = ()=>renderStudentChart(select.value, chartCanvas);
+  select.onchange = function() {
+    const s = students.find(st=>st.id==select.value);
+    const labels = s.AHT.map(a=>a.date);
+    const ahtData = s.AHT.map(a=>a.seconds);
+    const nsatData = s.NSAT.map(n=>n.total);
+    if(chart) chart.destroy();
+    chart = new Chart(chartCanvas, {
+      type:'line',
+      data:{labels:labels,datasets:[
+        {label:'AHT', data:ahtData, borderColor:getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), fill:false},
+        {label:'NSAT', data:nsatData, borderColor:getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim(), fill:false}
+      ]}
+    });
+  };
   select.onchange();
-  
-  let btn = document.createElement('button'); btn.innerText='Скачать PNG'; btn.classList.add('action');
-  btn.onclick = ()=>{
-    if(chart){ 
-      let link = document.createElement('a'); 
-      link.href = chart.toBase64Image(); 
-      link.download='student_chart.png'; 
+
+  const btn = document.createElement('button'); btn.innerText='Скачать PNG'; btn.classList.add('action');
+  btn.onclick = function() {
+    if(chart){
+      const link = document.createElement('a');
+      link.href = chart.toBase64Image();
+      link.download='student_chart.png';
       link.click();
     }
   };
   container.appendChild(btn);
 }
 
-function renderStudentChart(studentId, canvas){
-  let s = students.find(st=>st.id==studentId);
-  let labels = s.AHT.map(d=>d.date);
-  let ahtData = s.AHT.map(d=>d.seconds);
-  let nsatData = s.NSAT.map(d=>d.total);
-  if(chart) chart.destroy();
-  chart = new Chart(canvas, {
-    type:'line',
-    data:{
-      labels:labels,
-      datasets:[
-        {label:'AHT', data:ahtData, borderColor:getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), fill:false},
-        {label:'NSAT', data:nsatData, borderColor:getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim(), fill:false}
-      ]
-    }
-  });
-}
-
-// --- Таблица учеников ---
+// ---------------------------- Рендер таблицы учеников ----------------------------
 function renderStudentsTable(container){
-  let table = document.createElement('table');
-  let header = table.insertRow();
-  ['Имя','Город','Руководитель','Редактировать'].forEach(h=>{
-    let th = header.insertCell(); th.innerText=h;
-  });
+  const table = document.createElement('table');
+  const header = table.insertRow();
+  ['Имя','Город','Руководитель','Редактировать'].forEach(h=>header.insertCell().innerText=h);
 
   getVisibleStudents().forEach(s=>{
-    let row = table.insertRow();
+    const row = table.insertRow();
     row.insertCell().innerText = s.name;
     row.insertCell().innerText = s.city;
     row.insertCell().innerText = s.supervisor;
-    let td = row.insertCell();
+    const td = row.insertCell();
     if(currentUser.role==='admin' || currentUser.role==='kurator'){
-      let btn = document.createElement('button'); btn.innerText='Редактировать'; btn.classList.add('action');
+      const btn = document.createElement('button'); btn.innerText='Редактировать'; btn.classList.add('action');
       btn.onclick=()=>openEditModal(s);
       td.appendChild(btn);
     }
   });
-
   container.appendChild(table);
 }
 
-// --- Таблица наставников ---
+// ---------------------------- Рендер таблицы наставников ----------------------------
 function renderMentorsTable(container){
-  let table = document.createElement('table');
-  let header = table.insertRow();
-  ['Наставник','Ученики','Редактировать'].forEach(h=>{ header.insertCell().innerText=h; });
-  let mentors = users.filter(u=>u.role==='mentor');
+  const table = document.createElement('table');
+  const header = table.insertRow();
+  ['Наставник','Ученики','Редактировать'].forEach(h=>header.insertCell().innerText=h);
+  const mentors = users.filter(u=>u.role==='mentor');
   mentors.forEach(m=>{
-    let row = table.insertRow();
+    const row = table.insertRow();
     row.insertCell().innerText = m.username;
     row.insertCell().innerText = students.filter(s=>s.mentorId===m.id).map(s=>s.name).join(', ');
-    let td = row.insertCell();
+    const td = row.insertCell();
     if(currentUser.role==='admin' || currentUser.role==='kurator'){
-      let btn = document.createElement('button'); btn.innerText='Редактировать'; btn.classList.add('action');
+      const btn = document.createElement('button'); btn.innerText='Редактировать'; btn.classList.add('action');
       btn.onclick=()=>openEditModal(m);
       td.appendChild(btn);
     }
@@ -91,7 +229,7 @@ function renderMentorsTable(container){
   container.appendChild(table);
 }
 
-// --- Сводные по наставникам ---
+// ---------------------------- Рендер сводных по наставникам ----------------------------
 function renderMentorSummary(container){
   container.innerHTML='';
   let visibleMentors = [];
@@ -99,19 +237,19 @@ function renderMentorSummary(container){
   if(currentUser.role==='kurator') visibleMentors = users.filter(u=>currentUser.mentors.includes(u.id));
 
   visibleMentors.forEach(m=>{
-    let header = document.createElement('h3'); header.innerText=`Наставник: ${m.username}`;
+    const header = document.createElement('h3'); header.innerText=`Наставник: ${m.username}`;
     container.appendChild(header);
 
-    let table = document.createElement('table');
-    let tr = table.insertRow();
+    const table = document.createElement('table');
+    const tr = table.insertRow();
     ['Ученик','Дата','Звонки','AHT (сек)','IT-проблем','ACW','Перезвоны','Оценки','Детракторы','Промоутеры','Нейтралы','%NSAT'].forEach(h=>{
       tr.insertCell().innerText=h;
     });
 
     students.filter(s=>s.mentorId===m.id).forEach(s=>{
       s.AHT.forEach((aht,i)=>{
-        let nsat = s.NSAT[i] || {total:0,detractors:0,promoters:0,neutrals:0};
-        let row = table.insertRow();
+        const nsat = s.NSAT[i] || {total:0,detractors:0,promoters:0,neutrals:0};
+        const row = table.insertRow();
         row.insertCell().innerText = s.name;
         row.insertCell().innerText = aht.date;
         row.insertCell().innerText = aht.calls;
@@ -127,8 +265,10 @@ function renderMentorSummary(container){
       });
     });
 
-    let saveBtn = document.createElement('button'); saveBtn.innerText='Сохранить'; saveBtn.classList.add('action');
-    saveBtn.onclick = ()=>saveMentorData(m.id);
+    const saveBtn = document.createElement('button'); saveBtn.innerText='Сохранить'; saveBtn.classList.add('action');
+    saveBtn.onclick = function(){
+      saveMentorData(m.id);
+    };
     container.appendChild(table);
     container.appendChild(saveBtn);
   });
@@ -136,7 +276,7 @@ function renderMentorSummary(container){
 
 function saveMentorData(mentorId){
   const token = localStorage.getItem('token');
-  fetch('https://autorization-hdzm.onrender.com/api/saveMentorData',{
+  fetch(`${API_URL}/saveMentorData`,{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
     body:JSON.stringify({mentorId, students: students.filter(s=>s.mentorId===mentorId)})
@@ -144,39 +284,39 @@ function saveMentorData(mentorId){
     .catch(err=>alert('Ошибка сохранения'));
 }
 
-// --- Показатели отдельного ученика (AHT и NSAT) ---
+// ---------------------------- Рендер показателей ученика (AHT/NSAT) ----------------------------
 function renderStudentIndicators(container){
-  let select = document.createElement('select');
+  const select = document.createElement('select');
   getVisibleStudents().forEach(s=>{
-    let opt=document.createElement('option'); opt.value=s.id; opt.innerText=s.name;
+    const opt=document.createElement('option'); opt.value=s.id; opt.innerText=s.name;
     select.appendChild(opt);
   });
   container.appendChild(select);
 
-  let tableAHT = document.createElement('table');
-  let tableNSAT = document.createElement('table');
+  const tableAHT = document.createElement('table');
+  const tableNSAT = document.createElement('table');
 
-  select.onchange = ()=>{
+  select.onchange = function(){
     tableAHT.innerHTML=''; tableNSAT.innerHTML='';
-    let s = students.find(st=>st.id==select.value);
+    const s = students.find(st=>st.id==select.value);
 
-    let trAHT = tableAHT.insertRow();
+    const trAHT = tableAHT.insertRow();
     ['Дата','Звонки','AHT (сек)','IT-проблем','ACW','Перезвоны'].forEach(h=>trAHT.insertCell().innerText=h);
     s.AHT.forEach(a=>{
-      let row = tableAHT.insertRow();
+      const row = tableAHT.insertRow();
       Object.values(a).forEach(v=>{
-        let td = row.insertCell(); td.innerText=v;
+        const td = row.insertCell(); td.innerText=v;
         if(currentUser.role!=='mentor') td.contentEditable=true;
       });
     });
 
-    let trNSAT = tableNSAT.insertRow();
+    const trNSAT = tableNSAT.insertRow();
     ['Дата','Оценки','Детракторы','Промоутеры','Нейтралы','%NSAT'].forEach(h=>trNSAT.insertCell().innerText=h);
     s.NSAT.forEach(n=>{
-      let row = tableNSAT.insertRow();
-      let percent = n.total>0?Math.round(n.promoters/n.total*100):0;
+      const row = tableNSAT.insertRow();
+      const percent = n.total>0?Math.round(n.promoters/n.total*100):0;
       [n.date,n.total,n.detractors,n.promoters,n.neutrals,percent+'%'].forEach(v=>{
-        let td=row.insertCell(); td.innerText=v;
+        const td=row.insertCell(); td.innerText=v;
         if(currentUser.role!=='mentor') td.contentEditable=true;
       });
     });
@@ -186,13 +326,12 @@ function renderStudentIndicators(container){
   };
   select.onchange();
 
-  let saveBtn = document.createElement('button'); saveBtn.innerText='Сохранить'; saveBtn.classList.add('action');
-  saveBtn.onclick = ()=>{
-    let s = students.find(st=>st.id==select.value);
-    // Собираем данные из таблиц
+  const saveBtn=document.createElement('button'); saveBtn.innerText='Сохранить'; saveBtn.classList.add('action');
+  saveBtn.onclick=function(){
+    const s = students.find(st=>st.id==select.value);
     let updatedAHT=[], updatedNSAT=[];
     for(let i=1;i<tableAHT.rows.length;i++){
-      let r=tableAHT.rows[i];
+      const r=tableAHT.rows[i];
       updatedAHT.push({
         date:r.cells[0].innerText,
         calls:parseInt(r.cells[1].innerText)||0,
@@ -203,7 +342,7 @@ function renderStudentIndicators(container){
       });
     }
     for(let i=1;i<tableNSAT.rows.length;i++){
-      let r=tableNSAT.rows[i];
+      const r=tableNSAT.rows[i];
       updatedNSAT.push({
         date:r.cells[0].innerText,
         total:parseInt(r.cells[1].innerText)||0,
@@ -214,7 +353,7 @@ function renderStudentIndicators(container){
     }
 
     const token = localStorage.getItem('token');
-    fetch('https://autorization-hdzm.onrender.com/api/saveStudentData',{
+    fetch(`${API_URL}/saveStudentData`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
       body:JSON.stringify({studentId:s.id,AHT:updatedAHT,NSAT:updatedNSAT})
